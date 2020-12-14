@@ -120,7 +120,7 @@ class CPU:
             "AND": lambda x, y: x & y,
             "OR": lambda x, y: x | y,
             "XOR": lambda x, y: x ^ y,
-            # "NOT": lambda x, y: x ~ y,
+            "NOT": lambda x: ~x,
             "SHL": lambda x, y: x << y,
             "SHR": lambda x, y: x >> y,
             "MOD": lambda x, y: x % y,
@@ -136,7 +136,7 @@ class CPU:
     def ram_read(self, mar):                    # MAR: Memory Address Register
         return self.ram[mar]                    # holds the memory address we're reading or writing
 
-    def ram_write(self, mdr, mar):              # MDR`: Memory Data Register
+    def ram_write(self, mdr, mar):              # MDR: Memory Data Register
         self.ram[mar] = mdr                     # holds the value to write or the value just read
 
 
