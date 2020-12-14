@@ -255,7 +255,7 @@ class CPU:
         """
         print("CALL")
         self.registers[SP] -= 1
-        self.ram[self.registers[SP]] = self.pc + 2
+        self.ram_write(operand_b, self.registers[SP])
         self.pc = self.registers[operand_a]
 
     def execute_RET(self, operand_a, operand_b ):
