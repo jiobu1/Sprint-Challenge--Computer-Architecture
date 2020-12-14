@@ -255,7 +255,7 @@ class CPU:
         """
         print("CALL")
         self.registers[SP] -= 1
-        self.ram_write(operand_b, self.registers[SP])
+        self.ram_write(self.pc + 2, self.registers[SP])
         self.pc = self.registers[operand_a]
 
     def execute_RET(self, operand_a, operand_b ):
@@ -264,8 +264,9 @@ class CPU:
         Pop the value from the top of the stack and store it in the `PC`.
         """
         print("RET")
+        self.pc = self.ram_read(self.registers[SP])
         self.registers[SP] += 1
-        self.pc = self.registers[SP]
+        
 
 
     # SPRINT
