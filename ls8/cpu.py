@@ -54,7 +54,7 @@ class CPU:
         self.halted = False
 
         self.flag = 0
-        self.inst_set_pc = False
+        self.inst_set_pc = False   # Some instructions set the PC directly [CALL, JMP, JEQ, JNE]
 
         #  Table for fast lookups
         self.execute = {
@@ -86,13 +86,6 @@ class CPU:
             SHR: self.execute_SHR,
             MOD: self.execute_MOD,
         }
-
-
-    # def bit_mask(self):
-    #     return ((self.ir >> 6) & 0b11) + 1
-
-    # def instruction_sets_pc(self):
-    #     return ((self.ir >> 4) & 0b0001) == 1
 
     def load(self, filename):
         """Load a program into memory."""
@@ -136,16 +129,6 @@ class CPU:
             if op in ops:
                 self.registers[reg_a] = ops[op](self.registers[reg_a], self.registers[reg_b])
                 return self.registers[reg_a]
-
-            elif op == "CMP":
-                self.flag &= 0x11111000  # clear all CMP flags
-                if self.registers[reg_a] < self.registers[reg_b]:
-                    self.flag = 0b00000100
-                elif self.registers[reg_a] > self.registers[reg_b]:
-                    self.flag = 0b00000010
-                else:
-                    self.flag = 0b00000001
-
         except:
             raise Exception("Unsupported ALU operation")
 
@@ -161,13 +144,11 @@ class CPU:
         """Halt the CPU (and exit the emulator)."""
         print("HLT")
         self.halted = True
-        # self.pc += self.bit_mask
 
     def execute_LDI(self, operand_a, operand_b):                     # store value in register
         """Set the value of a register to an integer."""
         print("LDI")
         self.registers[operand_a] = operand_b
-        #self.pc += self.bit_mask
 
     def execute_PRN(self, operand_a, operand_b):
         """
@@ -177,7 +158,6 @@ class CPU:
         """
         print("PRN")
         print(self.registers[operand_a])
-        #self.pc += self.bit_mask
 
     # ALU operations
     def execute_ADD(self, operand_a, operand_b):
@@ -199,7 +179,12 @@ class CPU:
     # SPRINT
     def execute_CMP(self, operand_a, operand_b):
         print("CMP")
-        self.alu("CMP", operand_a, operand_b)
+        if self.registers[operand_a] > self.registers[operand_b]:
+            self.flag = 0b100
+        elif self.registers[operand_a] < self.registers[operand_b]:
+            self.flag = 0b010
+        else:
+            self.flag = 0b001
 
     # ALU STRETCH
     def execute_AND(self, operand_a, operand_b):
@@ -245,7 +230,6 @@ class CPU:
         print("PUSH")
         self.registers[SP] -= 1                # decrement by 1
         self.ram_write(self.registers[operand_a], self.registers[SP])
-        #self.pc += self.bit_mask
 
     def execute_POP(self, operand_a, operand_b):
         """
@@ -256,7 +240,6 @@ class CPU:
         print("POP")
         self.registers[operand_a] = self.ram_read(self.registers[SP])
         self.registers[SP] += 1
-        #self.pc += self.bit_mask
 
     # SUBROUTINES
     def execute_CALL(self, operand_a, operand_b):
@@ -272,7 +255,7 @@ class CPU:
         """
         print("CALL")
         self.registers[SP] -= 1
-        self.ram_write(self.pc + self.bit_mask, registers[SP])
+        self.ram[self.registers[SP]] = self.pc + 2
         self.pc = self.registers[operand_a]
 
     def execute_RET(self, operand_a, operand_b ):
@@ -297,14 +280,14 @@ class CPU:
         """
         If `equal` flag is set (true), jump to the address stored in the given register.
         """
-        if self.flag == 0b00000001:
-            self.execute_JMP()
+        if (self.flag & 0b001):
+            self.execute_JMP(operand_a, operand_b)
         else:
             self.inst_set_pc = False
 
     def execute_JNE(self, operand_a, operand_b):
-        if self.flag != 0b00000001:
-            self.execute_JMP()
+        if not (self.flag & 0b001):
+            self.execute_JMP(operand_a, operand_b)
         else:
             self.inst_set_pc = False
 
@@ -318,7 +301,7 @@ class CPU:
             operand_b = self.ram_read(self.pc + 2)
 
             bit_mask = ((self.ir >> 6) & 0b11) + 1
-            self.instruction_sets_pc = ((self.ir >> 4) & 0b1) == 1
+            self.inst_set_pc = ((self.ir >> 4) & 0b1) == 1
 
             if self.ir in self.execute:
                 self.execute[self.ir](operand_a, operand_b)
@@ -326,19 +309,21 @@ class CPU:
                 print(f"Error: Could not find instruction: {self.ir}")
                 sys.exit(1)
 
-            if not self.instruction_sets_pc:
+            # exceptions = [CALL, RET, JMP, JEQ, JNE]
+            if not self.inst_set_pc:
                 self.pc += bit_mask
 
+            self.trace()
 
     def trace(self):
         """
         Handy function to print out the CPU state. You might want to call this
         from run() if you need help debugging.
         """
-        print(f"pc {bin(self.pc)}")
+        print(f"pc {self.pc}")
         print(f"memory address {self.ram_read(self.pc)}")
-        print(f"operand_a {self.operand_a}")
-        print(f"operand_b {self.operand_b}")
+        print(f"operand_a {self.ram_read(self.pc + 1)}")
+        print(f"operand_b {self.ram_read(self.pc + 2)}")
 
 
         print(f"TRACE: %02X | %02X %02X %02X |" % (
@@ -346,8 +331,8 @@ class CPU:
             #self.fl,
             #self.ie,
             self.ram_read(self.pc),
-            self.operand_a,
-            self.operand_b
+            self.ram_read(self.pc + 1),
+            self.ram_read(self.pc + 1)
         ), end='')
 
         for i in range(8):
