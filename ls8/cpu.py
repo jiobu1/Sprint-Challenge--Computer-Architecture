@@ -296,17 +296,17 @@ class CPU:
     def run(self):
         """Run the CPU."""
         while not self.halted:
-            self.ir = self.ram_read(self.pc)         # Instruction Register (IR)
+            IR = self.ram_read(self.pc)         # Instruction Register (IR)
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
 
-            bit_mask = ((self.ir >> 6) & 0b11) + 1
-            self.inst_set_pc = ((self.ir >> 4) & 0b1) == 1
+            bit_mask = ((IR >> 6) & 0b11) + 1
+            self.inst_set_pc = ((IR >> 4) & 0b1) == 1
 
-            if self.ir in self.execute:
-                self.execute[self.ir](operand_a, operand_b)
+            if IR in self.execute:
+                self.execute[IR](operand_a, operand_b)
             else:
-                print(f"Error: Could not find instruction: {self.ir}")
+                print(f"Error: Could not find instruction: {IR}")
                 sys.exit(1)
 
             # exceptions = [CALL, RET, JMP, JEQ, JNE]
