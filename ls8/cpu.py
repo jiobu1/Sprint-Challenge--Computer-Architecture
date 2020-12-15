@@ -54,7 +54,7 @@ class CPU:
         self.halted = False
 
         self.flag = 0
-        self.inst_set_pc = False   # Some instructions set the PC directly [CALL, JMP, JEQ, JNE]
+        self.inst_set_pc = False            # Some instructions set the PC directly [CALL, JMP, JEQ, JNE]
 
         #  Table for fast lookups
         self.execute = {
@@ -266,8 +266,6 @@ class CPU:
         print("RET")
         self.pc = self.ram_read(self.registers[SP])
         self.registers[SP] += 1
-        
-
 
     # SPRINT
     def execute_JMP(self, operand_a, operand_b):
@@ -291,7 +289,6 @@ class CPU:
             self.execute_JMP(operand_a, operand_b)
         else:
             self.inst_set_pc = False
-
 
     # EXECUTE CODE
     def run(self):
